@@ -38,8 +38,7 @@ This project is my way of saying:
 ## 🛠️ Built With  
 
 - 💻 HTML  
-- 🎨 CSS  
-- ✨ JavaScript  
+- 🎨 CSS   
 - 💖 Pure Love  
 
 ---
