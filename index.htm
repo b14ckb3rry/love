@@ -20,7 +20,6 @@
             color: white;
             font-family: 'Outfit', sans-serif;
         }
-
         #canvas-container {
             position: absolute;
             top: 0;
@@ -29,7 +28,6 @@
             height: 100%;
             z-index: 1;
         }
-
         .content {
             position: absolute;
             top: 20%;
@@ -41,7 +39,6 @@
             pointer-events: none;
             /* Let clicks pass through to canvas if needed */
         }
-
         h1 {
             font-size: 3rem;
             font-weight: 300;
@@ -50,19 +47,16 @@
             text-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.3);
             animation: fadeIn 2s ease-in-out;
         }
-
         @keyframes fadeIn {
             from {
                 opacity: 0;
                 transform: translateY(-20px);
             }
-
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
-
         @media (max-width: 600px) {
             h1 {
                 font-size: 2rem;
@@ -70,26 +64,19 @@
         }
     </style>
 </head>
-
 <body>
-
     <div class="content">
         <h1>Happy Valentine's Day</h1>
         <h1>To My Love Shanu 💕</h1>
-
     </div>
-
     <canvas id="canvas-container"></canvas>
-
     <script>
         const canvas = document.getElementById('canvas-container');
         const ctx = canvas.getContext('2d');
-
         let width, height;
         let particles = [];
         let grassBlades = [];
         let flowers = [];
-
         // Configuration
         const config = {
             starCount: 150,
@@ -99,16 +86,13 @@
             swayAmplitude: 15, // Base sway for flowers
             grassSway: 5       // Base sway for grass
         };
-
         // Resize handling
         function resize() {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
             init();
         }
-
         window.addEventListener('resize', resize);
-
         // Helper classes
         class Particle {
             constructor() {
@@ -119,14 +103,12 @@
                 this.speed = Math.random() * 0.05 + 0.01;
                 this.direction = Math.random() > 0.5 ? 1 : -1;
             }
-
             update() {
                 this.alpha += this.speed * this.direction;
                 if (this.alpha <= 0 || this.alpha >= 1) {
                     this.direction *= -1;
                 }
             }
-
             draw() {
                 ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha * 0.6})`;
                 ctx.beginPath();
@@ -134,7 +116,6 @@
                 ctx.fill();
             }
         }
-
         class Grass {
             constructor() {
                 this.x = Math.random() * width;
@@ -145,12 +126,10 @@
                 this.swayOffset = Math.random() * Math.PI * 2;
                 this.curve = 0;
             }
-
             update(time) {
                 // Sway calculation
                 this.curve = Math.sin(time * 0.001 + this.swayOffset) * config.grassSway;
             }
-
             draw() {
                 ctx.fillStyle = this.color;
                 ctx.beginPath();
@@ -172,7 +151,6 @@
                 ctx.fill();
             }
         }
-
         class Flower {
             constructor(x, heightScale, colorHue = 180) {
                 this.rootX = x;
@@ -187,22 +165,17 @@
                     { y: 0.7, dir: -1, size: 30 }
                 ];
             }
-
             update(time) {
-                // Simple wind sway
                 this.sway = Math.sin(time * config.windSpeed + this.swayOffset) * config.swayAmplitude;
             }
-
             draw() {
                 // Determine tip position based on sway
                 const tipX = this.rootX + this.sway;
                 const tipY = this.rootY - this.stemHeight;
-
                 // 1. Draw Stem
                 ctx.strokeStyle = `hsl(150, 60%, 25%)`; // Dark green stem
                 ctx.lineWidth = this.stemWidth;
                 ctx.lineCap = 'round';
-
                 ctx.beginPath();
                 ctx.moveTo(this.rootX, this.rootY);
                 ctx.quadraticCurveTo(
@@ -212,21 +185,17 @@
                     tipY
                 );
                 ctx.stroke();
-
                 // 2. Draw Leaves
                 this.leaves.forEach(leaf => {
                     const leafY = this.rootY - this.stemHeight * leaf.y;
                     // Interpolate x position on the curve for the leaf base
                     // Approximate for visual purposes
                     const leafBaseX = this.rootX + (tipX - this.rootX) * leaf.y;
-
                     this.drawLeaf(leafBaseX, leafY, leaf.dir, leaf.size);
                 });
-
                 // 3. Draw Flower Head
                 this.drawFlowerHead(tipX, tipY);
             }
-
             drawLeaf(x, y, direction, size) {
                 ctx.fillStyle = `hsl(150, 50%, 30%)`;
                 ctx.beginPath();
@@ -246,7 +215,6 @@
                 );
                 ctx.fill();
             }
-
             drawFlowerHead(x, y) {
                 const petalCount = 5;
                 const radius = 30;
@@ -375,5 +343,4 @@
 
     </script>
 </body>
-
 </html>
