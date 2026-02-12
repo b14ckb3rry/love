@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Valentine's Day</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500&display=swap" rel="stylesheet">
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #020205;
+            color: white;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .content {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            text-align: center;
+            width: 100%;
+            pointer-events: none;
+            /* Let clicks pass through to canvas if needed */
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            color: red;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5), 0 0 20px rgba(255, 255, 255, 0.3);
+            animation: fadeIn 2s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="content">
+        <h1>Happy Valentine's Day</h1>
+        <h1>To My Love Shanu 💕</h1>
+
+    </div>
+
+    <canvas id="canvas-container"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas-container');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        let particles = [];
+        let grassBlades = [];
+        let flowers = [];
+
+        // Configuration
+        const config = {
+            starCount: 150,
+            grassCount: 60,
+            flowerCount: 3,
+            windSpeed: 0.001,
+            swayAmplitude: 15, // Base sway for flowers
+            grassSway: 5       // Base sway for grass
+        };
+
+        // Resize handling
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            init();
+        }
+
+        window.addEventListener('resize', resize);
+
+        // Helper classes
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height * 0.7; // Top 70% of screen
+                this.size = Math.random() * 2;
+                this.alpha = Math.random();
+                this.speed = Math.random() * 0.05 + 0.01;
+                this.direction = Math.random() > 0.5 ? 1 : -1;
+            }
+
+            update() {
+                this.alpha += this.speed * this.direction;
+                if (this.alpha <= 0 || this.alpha >= 1) {
+                    this.direction *= -1;
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha * 0.6})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class Grass {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = height;
+                this.height = Math.random() * 100 + 50; // Variable height
+                this.width = Math.random() * 5 + 2;
+                this.color = `hsl(${100 + Math.random() * 40}, 60%, ${15 + Math.random() * 15}%)`; // Dark green variations
+                this.swayOffset = Math.random() * Math.PI * 2;
+                this.curve = 0;
+            }
+
+            update(time) {
+                // Sway calculation
+                this.curve = Math.sin(time * 0.001 + this.swayOffset) * config.grassSway;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y); // Base center
+                // Curve to the tip
+                ctx.quadraticCurveTo(
+                    this.x + this.curve / 2,
+                    this.y - this.height / 2,
+                    this.x + this.curve,
+                    this.y - this.height
+                );
+                // Curve back down
+                ctx.quadraticCurveTo(
+                    this.x + this.width + this.curve / 2,
+                    this.y - this.height / 2,
+                    this.x + this.width,
+                    this.y
+                );
+                ctx.fill();
+            }
+        }
+
+        class Flower {
+            constructor(x, heightScale, colorHue = 180) {
+                this.rootX = x;
+                this.rootY = height;
+                this.stemHeight = height * 0.45 * heightScale;
+                this.stemWidth = 6;
+                this.swayOffset = Math.random() * Math.PI * 2;
+                this.colorHue = colorHue;
+                this.leaves = [
+                    { y: 0.3, dir: -1, size: 40 },
+                    { y: 0.5, dir: 1, size: 50 },
+                    { y: 0.7, dir: -1, size: 30 }
+                ];
+            }
+
+            update(time) {
+                // Simple wind sway
+                this.sway = Math.sin(time * config.windSpeed + this.swayOffset) * config.swayAmplitude;
+            }
+
+            draw() {
+                // Determine tip position based on sway
+                const tipX = this.rootX + this.sway;
+                const tipY = this.rootY - this.stemHeight;
+
+                // 1. Draw Stem
+                ctx.strokeStyle = `hsl(150, 60%, 25%)`; // Dark green stem
+                ctx.lineWidth = this.stemWidth;
+                ctx.lineCap = 'round';
+
+                ctx.beginPath();
+                ctx.moveTo(this.rootX, this.rootY);
+                ctx.quadraticCurveTo(
+                    this.rootX + this.sway / 3,
+                    this.rootY - this.stemHeight / 2,
+                    tipX,
+                    tipY
+                );
+                ctx.stroke();
+
+                // 2. Draw Leaves
+                this.leaves.forEach(leaf => {
+                    const leafY = this.rootY - this.stemHeight * leaf.y;
+                    // Interpolate x position on the curve for the leaf base
+                    // Approximate for visual purposes
+                    const leafBaseX = this.rootX + (tipX - this.rootX) * leaf.y;
+
+                    this.drawLeaf(leafBaseX, leafY, leaf.dir, leaf.size);
+                });
+
+                // 3. Draw Flower Head
+                this.drawFlowerHead(tipX, tipY);
+            }
+
+            drawLeaf(x, y, direction, size) {
+                ctx.fillStyle = `hsl(150, 50%, 30%)`;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                // Control points for leaf shape
+                ctx.quadraticCurveTo(
+                    x + size * direction,
+                    y - size * 0.5,
+                    x + size * 1.5 * direction,
+                    y - size * 0.2
+                );
+                ctx.quadraticCurveTo(
+                    x + size * direction,
+                    y + size * 0.5,
+                    x,
+                    y
+                );
+                ctx.fill();
+            }
+
+            drawFlowerHead(x, y) {
+                const petalCount = 5;
+                const radius = 30;
+
+                // Glow behind flower
+                const gradient = ctx.createRadialGradient(x, y, 5, x, y, 60);
+                gradient.addColorStop(0, `hsla(${this.colorHue}, 80%, 70%, 0.8)`);
+                gradient.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(x, y, 60, 0, Math.PI * 2);
+                ctx.fill();
+
+
+                // Draw Petals
+                ctx.fillStyle = `hsla(${this.colorHue}, 70%, 60%, 0.9)`;
+                for (let i = 0; i < petalCount; i++) {
+                    const angle = (Math.PI * 2 / petalCount) * i - Math.PI / 2;
+                    const petalLen = 35;
+                    const cx = x + Math.cos(angle) * petalLen;
+                    const cy = y + Math.sin(angle) * petalLen;
+
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy, 15, 25, angle, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Center of flower (Golden glow)
+                ctx.fillStyle = '#fffacd';
+                ctx.beginPath();
+                ctx.arc(x, y, 10, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Inner yellow detail
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(x, y + 2, 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Initialize scene
+        function init() {
+            particles = [];
+            grassBlades = [];
+            flowers = [];
+
+            // Add stars
+            for (let i = 0; i < config.starCount; i++) {
+                particles.push(new Particle());
+            }
+
+            // Add grass
+            // Dense grass at bottom
+            const density = Math.floor(width / 5);
+            for (let i = 0; i < density; i++) {
+                grassBlades.push(new Grass());
+            }
+
+            // Add flowers
+            // Center group of 3 flowers
+            const centerX = width / 2;
+
+            // Middle tall flower
+            flowers.push(new Flower(centerX, 1.0, 180)); // Cyan
+            // Left flower
+            flowers.push(new Flower(centerX - 90, 0.8, 185)); // Slightly diff hue
+            // Right flower
+            flowers.push(new Flower(centerX + 90, 0.85, 175)); // Slightly diff hue
+        }
+
+        // Animation Loop
+        function animate(time) {
+            ctx.clearRect(0, 0, width, height);
+
+            // Background gradient
+            const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
+            bgGradient.addColorStop(0, '#020205'); // Deep night
+            bgGradient.addColorStop(1, '#0a1a2a'); // Slightly lighter at bottom
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw stars
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            // Draw flowers (behind some grass for depth? actually better in front of back grass)
+            // Let's optimize: Draw back grass, then flowers, then front grass? 
+            // For now, standard order: Flower stems -> Leaves -> Heads might overlay.
+            // But to keep it simple and match reference, Flowers are prominent.
+
+            // Draw all grass first to be behind flowers?
+            // Reference image has flowers seemingly amidst or in front of grass.
+            // Let's render grass first so flowers stand out.
+            grassBlades.forEach(g => {
+                g.update(time);
+                g.draw();
+            });
+
+            flowers.forEach(f => {
+                f.update(time);
+                f.draw();
+            });
+
+            // Fireflies near flowers
+            // (Reusing particle logic but yellowish near center)
+            // Simple addition for extra visual flair
+            const timeScale = time * 0.002;
+            for (let i = 0; i < 5; i++) {
+                const x = width / 2 + Math.sin(timeScale + i) * 100;
+                const y = height / 2 + Math.cos(timeScale * 1.3 + i) * 100;
+                ctx.fillStyle = `rgba(255, 255, 200, ${0.5 + Math.sin(timeScale * 5 + i) * 0.5})`;
+                ctx.beginPath();
+                ctx.arc(x, y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Start
+        resize(); // creates canvas size and calls init
+        requestAnimationFrame(animate);
+
+    </script>
+</body>
+
+</html>
